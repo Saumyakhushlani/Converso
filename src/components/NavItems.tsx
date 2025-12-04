@@ -9,8 +9,8 @@ const NavItems = () => {
         { label: 'Home', href: '/' },
         { label: 'My Journey', href: '/my-journey' },
         { label: 'Companions', href: '/companions' },
-        // {label:' Pricing', href:'/subscriptions'},
-        { label: 'Sign In', href: '/sign-in' },
+        {label:' Pricing', href:'/subscription'},
+        // { label: 'Sign In', href: '/sign-in' },
     ];
 
     const pathName = usePathname();
