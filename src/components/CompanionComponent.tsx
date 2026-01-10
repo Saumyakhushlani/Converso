@@ -1,6 +1,6 @@
 "use client"
 import React from 'react'
-import { getSubjectColor, configureAssistant } from '../../lib/utils'
+import { getSubjectColor, configureAssistant, getSubjectIcon } from '../../lib/utils'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { useState, useEffect, useRef } from 'react'
@@ -111,7 +111,7 @@ const CompanionComponent = ({ companionId, subject, topic, name, userName, userI
                                 'absolute transition-opacity duration-1000', callStatus === CallStatus.FINISHED || callStatus === CallStatus.INACTIVE ? 'opacity-1001' : 'opacity-0', callStatus === CallStatus.CONNECTING && 'opacity-100 animate-pulse'
                             )
                         }>
-                            <Image src={`/icons/${subject}.svg`} alt={subject} width={150} height={150} className="max-sm:w-fit" />
+                            <Image src={getSubjectIcon(subject)} alt={subject} width={150} height={150} className="max-sm:w-fit" />
                         </div>
 
                         <div className={cn('absolute transition-opacity duration-1000', callStatus === CallStatus.ACTIVE ? 'opacity-100': 'opacity-0')}>

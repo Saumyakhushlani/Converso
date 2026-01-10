@@ -115,30 +115,104 @@ export const getUserCompanions = async (userId: string) => {
 
 export const newCompanionPermissions = async () => {
     const { userId, has } = await auth();
-    const supabase = createSupabaseClient();
-
-    let limit = 0;
-
-    if(has({ plan: 'pro' })) {
-        return true;
-    } else if(has({ feature: "2_active_companoins" })) {
-        limit = 2;
-    } else if(has({ feature: "10_active_companions" })) {
-        limit = 10;
+    
+    if(!userId) {
+        console.error('No userId found in newCompanionPermissions');
+        return false;
     }
 
-    const { data, error } = await supabase
+    const supabase = createSupabaseClient();
+
+    // Check for subscription status in Supabase first (if you store it there)
+    // This is a more reliable way to check subscriptions
+    let userData = null;
+    try {
+        const { data } = await supabase
+            .from('users')
+            .select('subscription_plan, has_pro_plan')
+            .eq('clerk_id', userId)
+            .single();
+        userData = data;
+    } catch (err) {
+        // Table might not exist or user might not be in the table - ignore
+        console.log('Note: Could not check user subscription in database (this is okay)');
+    }
+
+    // If subscription is stored in database and user has pro
+    if (userData?.has_pro_plan === true || userData?.subscription_plan === 'pro') {
+        console.log('✅ User has pro plan (from database) - unlimited companions allowed');
+        return true;
+    }
+
+    // Check for pro plan via Clerk has() method
+    // Try different possible plan names and variations
+    const hasProPlan = has({ plan: 'pro' }) 
+        || has({ plan: 'Pro' }) 
+        || has({ plan: 'PRO' })
+        || has({ plan: 'pro_plan' })
+        || has({ plan: 'premium' })
+        || has({ plan: 'Premium' });
+    
+    // Also check organization metadata or features that indicate pro plan
+    const hasProFeature = has({ feature: 'unlimited_companions' }) 
+        || has({ feature: 'pro_plan' })
+        || has({ feature: 'premium' });
+
+    console.log('=== Companion Permission Check ===');
+    console.log('User ID:', userId);
+    console.log('Has plan "pro":', has({ plan: 'pro' }));
+    console.log('Has plan "Pro":', has({ plan: 'Pro' }));
+    console.log('Has plan "PRO":', has({ plan: 'PRO' }));
+    console.log('Has pro plan (combined):', hasProPlan);
+    console.log('Has pro feature:', hasProFeature);
+    console.log('Database subscription status:', userData);
+    
+    // If user has pro plan or pro features, allow unlimited
+    if(hasProPlan || hasProFeature) {
+        console.log('✅ User has pro plan - unlimited companions allowed');
+        return true;
+    }
+
+    // Set limits based on features
+    let limit = 1; // Default free tier - allow 1 companion
+    
+    if(has({ feature: "10_active_companions" })) {
+        limit = 10;
+        console.log('User has 10_active_companions feature');
+    } else if(has({ feature: "2_active_companions" })) {
+        limit = 2;
+        console.log('User has 2_active_companions feature');
+    } else if(has({ feature: "2_active_companoins" })) { // Keep old typo for backward compatibility
+        limit = 2;
+        console.log('User has 2_active_companoins feature (typo variant)');
+    } else {
+        console.log('User on free tier - limit: 1 companion');
+    }
+
+    // Get current companion count for the user
+    const { data, error, count } = await supabase
         .from('companions')
         .select('id', { count: 'exact' })
         .eq('author', userId)
 
-    if(error) throw new Error(error.message);
-
-    const companionCount = data?.length;
-
-    if(companionCount >= limit) {
-        return false
-    } else {
-        return true;
+    if(error) {
+        console.error('Error checking companion count:', error);
+        throw new Error(error.message);
     }
+
+    const companionCount = count ?? data?.length ?? 0;
+    console.log(`User has ${companionCount} companions, limit is ${limit}`);
+
+    // Return true if under limit, false if at or over limit
+    const canCreate = companionCount < limit;
+    console.log(`Can create companion: ${canCreate}`);
+    console.log('=== End Permission Check ===');
+    
+    // TEMPORARY WORKAROUND: If you have pro plan but it's not being detected,
+    // you can temporarily uncomment the line below to allow unlimited companions
+    // This is for testing purposes - remove after proper subscription setup
+    // TODO: Configure Clerk subscription properly or store subscription status in database
+    // return true; // Uncomment this line to allow all users temporarily
+    
+    return canCreate;
 }

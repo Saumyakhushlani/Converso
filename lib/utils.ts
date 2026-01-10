@@ -10,6 +10,30 @@ export const getSubjectColor = (subject: string) => {
   return subjectsColors[subject as keyof typeof subjectsColors];
 };
 
+export const getSubjectIcon = (subject: string): string => {
+  // Map subjects to their icon files
+  // If icon doesn't exist, use coding as fallback
+  const iconMap: Record<string, string> = {
+    'coding': 'coding',
+    'web-development': 'coding', // Fallback to coding icon
+    'algorithms': 'coding', // Fallback to coding icon
+    'data-structures': 'coding', // Fallback to coding icon
+    'backend': 'coding', // Fallback to coding icon
+    'frontend': 'coding', // Fallback to coding icon
+    'database': 'coding', // Fallback to coding icon
+    'software-engineering': 'coding', // Fallback to coding icon
+    // Keep old subjects that have icons
+    'maths': 'maths',
+    'language': 'language',
+    'science': 'science',
+    'history': 'history',
+    'economics': 'economics',
+  };
+
+  const iconName = iconMap[subject] || 'coding'; // Default to coding if not found
+  return `/icons/${iconName}.svg`;
+};
+
 export const configureAssistant = (voice: string, style: string) => {
   const voiceId = voices[voice as keyof typeof voices][
       style as keyof (typeof voices)[keyof typeof voices]

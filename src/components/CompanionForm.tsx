@@ -32,7 +32,7 @@ const formSchema = z.object({
   topic: z.string().min(1, { message: 'Topic is required.' }),
   voice: z.string().min(1, { message: 'Voice is required.' }),
   style: z.string().min(1, { message: 'Style is required.' }),
-  duration: z.number().min(1, { message: 'Duration is required.' }),
+  duration: z.number().min(1, { message: 'Duration must be at least 1 minute.' }),
 })
 
 const CompanionForm = () => {
@@ -44,7 +44,7 @@ const CompanionForm = () => {
       topic: '',
       voice: '',
       style: '',
-      duration: 5,
+      duration: undefined as any,
     },
   })
 
@@ -199,14 +199,34 @@ const CompanionForm = () => {
               <FormLabel>Estimated session duration in minutes</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="5"
-                  {...field}
-                  value={field.value || ''}
+                  value={field.value !== undefined && field.value !== null ? String(field.value) : ''}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    field.onChange(value === '' ? undefined : Number(value));
+                    const value = e.target.value.trim();
+                    // Allow empty string - user can clear completely
+                    if (value === '') {
+                      field.onChange(undefined as any);
+                      return;
+                    }
+                    // Only allow digits
+                    if (/^\d+$/.test(value)) {
+                      const numValue = parseInt(value, 10);
+                      if (numValue > 0) {
+                        field.onChange(numValue);
+                      }
+                    }
                   }}
+                  onBlur={(e) => {
+                    field.onBlur();
+                    // Only set default if still empty on blur
+                    if ((e.target.value === '' || field.value === undefined || field.value === null) && !form.formState.isSubmitting) {
+                      field.onChange(5);
+                    }
+                  }}
+                  name={field.name}
+                  ref={field.ref}
                   className="input"
                 />
               </FormControl>
