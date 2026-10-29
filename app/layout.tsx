@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import {ClerkProvider} from '@clerk/nextjs'
 
 const bricolage = Bricolage_Grotesque({
@@ -28,7 +27,6 @@ export default function RootLayout({
           <div className="flex-1">
             {children}
           </div>
-          <Footer />
         </ClerkProvider>
       </body>
     </html>
